@@ -1,0 +1,211 @@
+2025-08-28 12:21:25,344 - INFO - [Orchestrator] All required scripts found
+2025-08-28 12:21:25,344 - INFO - [Orchestrator] Starting OECD Tax Revenue Data Pipeline
+2025-08-28 12:21:25,344 - INFO - [Orchestrator] Base directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:21:25,344 - INFO - [Orchestrator] Download directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel
+2025-08-28 12:21:25,345 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:21:25,345 - INFO - [Orchestrator] STEP 1: DOWNLOADING OECD TAX DATA
+2025-08-28 12:21:25,345 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:21:25,345 - INFO - [Orchestrator] Starting Data Downloader...
+2025-08-28 12:21:25,345 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\main.py
+2025-08-28 12:21:25,346 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:22:08,422 - INFO - [Orchestrator] Data Downloader completed successfully in 43.08 seconds
+2025-08-28 12:22:08,423 - INFO - [Orchestrator] Found 1 Excel files in download directory
+2025-08-28 12:22:08,423 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:22:08,423 - INFO - [Orchestrator] STEP 2: CONVERTING EXCEL FILES TO CSV
+2025-08-28 12:22:08,423 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:22:08,424 - INFO - [Orchestrator] Starting Excel Converter...
+2025-08-28 12:22:08,424 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\universal_excel_converter.py --source C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel --output C:\Users\Execo Training\Desktop\OECD_TAXREVENUE --verbose
+2025-08-28 12:22:08,424 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:22:11,357 - INFO - [Orchestrator] Excel Converter completed successfully in 2.93 seconds
+2025-08-28 12:22:11,358 - INFO - [Orchestrator] Found 1 CSV files after conversion
+2025-08-28 12:22:11,358 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:22:11,358 - INFO - [Orchestrator] STEP 3: MAPPING AND PROCESSING DATA
+2025-08-28 12:22:11,359 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:22:11,359 - INFO - [Orchestrator] Starting Data Mapper...
+2025-08-28 12:22:11,359 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\final_corrected_mapper.py
+2025-08-28 12:22:11,359 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:22:12,034 - INFO - [Orchestrator] Data Mapper completed successfully in 0.68 seconds
+2025-08-28 12:22:12,035 - WARNING - [Orchestrator] Expected final output file not found
+2025-08-28 12:22:12,035 - INFO - [Orchestrator] Pipeline completed successfully!
+2025-08-28 12:22:12,036 - INFO - [Orchestrator] Execution log saved to: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\execution_log_20250828_122212.json
+2025-08-28 12:22:12,036 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:22:12,036 - INFO - [Orchestrator] EXECUTION SUMMARY
+2025-08-28 12:22:12,036 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:22:12,037 - INFO - [Orchestrator] Total duration: 46.69 seconds
+2025-08-28 12:22:12,037 - INFO - [Orchestrator] Overall success: True
+2025-08-28 12:22:12,037 - INFO - [Orchestrator]   Download: success (43.08s)
+2025-08-28 12:22:12,037 - INFO - [Orchestrator]   Conversion: success (2.93s)
+2025-08-28 12:22:12,037 - INFO - [Orchestrator]   Mapping: success (0.68s)
+2025-08-28 12:23:10,908 - INFO - [Orchestrator] All required scripts found
+2025-08-28 12:23:10,909 - INFO - [Orchestrator] Starting OECD Tax Revenue Data Pipeline
+2025-08-28 12:23:10,909 - INFO - [Orchestrator] Base directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:23:10,909 - INFO - [Orchestrator] Download directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel
+2025-08-28 12:23:10,909 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:10,909 - INFO - [Orchestrator] STEP 1: DOWNLOADING OECD TAX DATA
+2025-08-28 12:23:10,910 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:10,910 - INFO - [Orchestrator] Starting Data Downloader...
+2025-08-28 12:23:10,910 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\main.py
+2025-08-28 12:23:10,910 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:23:53,826 - INFO - [Orchestrator] Data Downloader completed successfully in 42.92 seconds
+2025-08-28 12:23:53,827 - INFO - [Orchestrator] Found 1 Excel files in download directory
+2025-08-28 12:23:53,827 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:53,827 - INFO - [Orchestrator] STEP 2: CONVERTING EXCEL FILES TO CSV
+2025-08-28 12:23:53,827 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:53,827 - INFO - [Orchestrator] Starting Excel Converter...
+2025-08-28 12:23:53,828 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\universal_excel_converter.py --source C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel --output C:\Users\Execo Training\Desktop\OECD_TAXREVENUE --verbose
+2025-08-28 12:23:53,828 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:23:56,593 - INFO - [Orchestrator] Excel Converter completed successfully in 2.77 seconds
+2025-08-28 12:23:56,594 - INFO - [Orchestrator] Found 1 CSV files after conversion
+2025-08-28 12:23:56,594 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:56,594 - INFO - [Orchestrator] STEP 3: MAPPING AND PROCESSING DATA
+2025-08-28 12:23:56,595 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:56,595 - INFO - [Orchestrator] Starting Data Mapper...
+2025-08-28 12:23:56,595 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\final_corrected_mapper.py
+2025-08-28 12:23:56,595 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:23:57,412 - INFO - [Orchestrator] Data Mapper completed successfully in 0.82 seconds
+2025-08-28 12:23:57,412 - WARNING - [Orchestrator] Expected final output file not found
+2025-08-28 12:23:57,413 - INFO - [Orchestrator] Pipeline completed successfully!
+2025-08-28 12:23:57,414 - INFO - [Orchestrator] Execution log saved to: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\execution_log_20250828_122357.json
+2025-08-28 12:23:57,414 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:57,414 - INFO - [Orchestrator] EXECUTION SUMMARY
+2025-08-28 12:23:57,414 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:23:57,415 - INFO - [Orchestrator] Total duration: 46.50 seconds
+2025-08-28 12:23:57,415 - INFO - [Orchestrator] Overall success: True
+2025-08-28 12:23:57,415 - INFO - [Orchestrator]   Download: success (42.92s)
+2025-08-28 12:23:57,415 - INFO - [Orchestrator]   Conversion: success (2.77s)
+2025-08-28 12:23:57,416 - INFO - [Orchestrator]   Mapping: success (0.82s)
+2025-08-28 12:31:54,207 - INFO - [Orchestrator] All required scripts found
+2025-08-28 12:31:54,208 - INFO - [Orchestrator] Starting OECD Tax Revenue Data Pipeline
+2025-08-28 12:31:54,208 - INFO - [Orchestrator] Base directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:31:54,208 - INFO - [Orchestrator] Download directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel
+2025-08-28 12:31:54,209 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:31:54,209 - INFO - [Orchestrator] STEP 1: DOWNLOADING OECD TAX DATA
+2025-08-28 12:31:54,209 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:31:54,209 - INFO - [Orchestrator] Starting Data Downloader...
+2025-08-28 12:31:54,209 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\main.py
+2025-08-28 12:31:54,210 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:33:07,629 - INFO - [Orchestrator] Data Downloader completed successfully in 73.42 seconds
+2025-08-28 12:33:07,630 - INFO - [Orchestrator] Found 2 Excel files in download directory
+2025-08-28 12:33:07,630 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:33:07,630 - INFO - [Orchestrator] STEP 2: CONVERTING EXCEL FILES TO CSV
+2025-08-28 12:33:07,630 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:33:07,630 - INFO - [Orchestrator] Starting Excel Converter...
+2025-08-28 12:33:07,631 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\universal_excel_converter.py --source C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel --output C:\Users\Execo Training\Desktop\OECD_TAXREVENUE --verbose
+2025-08-28 12:33:07,631 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:33:12,068 - INFO - [Orchestrator] Excel Converter completed successfully in 4.44 seconds
+2025-08-28 12:33:12,068 - INFO - [Orchestrator] Found 2 CSV files after conversion
+2025-08-28 12:33:12,069 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:33:12,069 - INFO - [Orchestrator] STEP 3: MAPPING AND PROCESSING DATA
+2025-08-28 12:33:12,069 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:33:12,069 - INFO - [Orchestrator] Starting Data Mapper...
+2025-08-28 12:33:12,069 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\final_corrected_mapper.py
+2025-08-28 12:33:12,069 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:33:12,745 - INFO - [Orchestrator] Data Mapper completed successfully in 0.68 seconds
+2025-08-28 12:33:12,745 - WARNING - [Orchestrator] Expected final output file not found
+2025-08-28 12:33:12,745 - INFO - [Orchestrator] Pipeline completed successfully!
+2025-08-28 12:33:12,746 - INFO - [Orchestrator] Execution log saved to: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\execution_log_20250828_123312.json
+2025-08-28 12:33:12,747 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:33:12,747 - INFO - [Orchestrator] EXECUTION SUMMARY
+2025-08-28 12:33:12,747 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:33:12,747 - INFO - [Orchestrator] Total duration: 78.54 seconds
+2025-08-28 12:33:12,747 - INFO - [Orchestrator] Overall success: True
+2025-08-28 12:33:12,748 - INFO - [Orchestrator]   Download: success (73.42s)
+2025-08-28 12:33:12,748 - INFO - [Orchestrator]   Conversion: success (4.44s)
+2025-08-28 12:33:12,748 - INFO - [Orchestrator]   Mapping: success (0.68s)
+2025-08-28 12:34:40,972 - INFO - [Orchestrator] All required scripts found
+2025-08-28 12:34:40,973 - INFO - [Orchestrator] Starting OECD Tax Revenue Data Pipeline
+2025-08-28 12:34:40,973 - INFO - [Orchestrator] Base directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:34:40,973 - INFO - [Orchestrator] Download directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel
+2025-08-28 12:34:40,973 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:34:40,973 - INFO - [Orchestrator] STEP 1: DOWNLOADING OECD TAX DATA
+2025-08-28 12:34:40,973 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:34:40,974 - INFO - [Orchestrator] Starting Data Downloader...
+2025-08-28 12:34:40,974 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\main.py
+2025-08-28 12:34:40,974 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:35:41,476 - INFO - [Orchestrator] Data Downloader completed successfully in 60.50 seconds
+2025-08-28 12:35:41,477 - INFO - [Orchestrator] Found 3 Excel files in download directory
+2025-08-28 12:35:41,477 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:35:41,477 - INFO - [Orchestrator] STEP 2: CONVERTING EXCEL FILES TO CSV
+2025-08-28 12:35:41,477 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:35:41,477 - INFO - [Orchestrator] Starting Excel Converter...
+2025-08-28 12:35:41,478 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\universal_excel_converter.py --source C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel --output C:\Users\Execo Training\Desktop\OECD_TAXREVENUE --verbose
+2025-08-28 12:35:41,478 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:35:47,353 - INFO - [Orchestrator] Excel Converter completed successfully in 5.88 seconds
+2025-08-28 12:35:47,354 - INFO - [Orchestrator] Found 3 CSV files after conversion
+2025-08-28 12:35:47,354 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:35:47,354 - INFO - [Orchestrator] STEP 3: MAPPING AND PROCESSING DATA
+2025-08-28 12:35:47,354 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:35:47,354 - INFO - [Orchestrator] Starting Data Mapper...
+2025-08-28 12:35:47,354 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\final_corrected_mapper.py
+2025-08-28 12:35:47,355 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:35:48,145 - INFO - [Orchestrator] Data Mapper completed successfully in 0.79 seconds
+2025-08-28 12:35:48,145 - INFO - [Orchestrator] Final output file created: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\OECD_TAX_REVENUE.csv
+2025-08-28 12:35:48,146 - INFO - [Orchestrator] Pipeline completed successfully!
+2025-08-28 12:35:48,146 - INFO - [Orchestrator] Execution log saved to: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\execution_log_20250828_123548.json
+2025-08-28 12:35:48,147 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:35:48,147 - INFO - [Orchestrator] EXECUTION SUMMARY
+2025-08-28 12:35:48,148 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:35:48,148 - INFO - [Orchestrator] Total duration: 67.17 seconds
+2025-08-28 12:35:48,148 - INFO - [Orchestrator] Overall success: True
+2025-08-28 12:35:48,148 - INFO - [Orchestrator]   Download: success (60.50s)
+2025-08-28 12:35:48,148 - INFO - [Orchestrator]   Conversion: success (5.88s)
+2025-08-28 12:35:48,149 - INFO - [Orchestrator]   Mapping: success (0.79s)
+2025-08-28 12:35:48,149 - INFO - [Orchestrator] Final output files:
+2025-08-28 12:38:08,014 - INFO - [Orchestrator] All required scripts found
+2025-08-28 12:38:08,014 - INFO - [Orchestrator] Starting OECD Tax Revenue Data Pipeline
+2025-08-28 12:38:08,015 - INFO - [Orchestrator] Base directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:38:08,015 - INFO - [Orchestrator] Download directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel
+2025-08-28 12:38:08,015 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:38:08,015 - INFO - [Orchestrator] STEP 1: DOWNLOADING OECD TAX DATA
+2025-08-28 12:38:08,015 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:38:08,015 - INFO - [Orchestrator] Starting Data Downloader...
+2025-08-28 12:38:08,016 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\main.py
+2025-08-28 12:38:08,016 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:40:37,885 - WARNING - [Orchestrator] Pipeline interrupted by user
+2025-08-28 12:40:37,886 - INFO - [Orchestrator] Execution log saved to: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\execution_log_20250828_124037.json
+2025-08-28 12:40:37,886 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:40:37,886 - INFO - [Orchestrator] EXECUTION SUMMARY
+2025-08-28 12:40:37,887 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:40:37,887 - INFO - [Orchestrator] Total duration: 149.87 seconds
+2025-08-28 12:40:37,887 - INFO - [Orchestrator] Overall success: False
+2025-08-28 12:40:37,887 - ERROR - [Orchestrator] Errors encountered: 1
+2025-08-28 12:40:37,888 - ERROR - [Orchestrator]   - Pipeline interrupted by user (Ctrl+C)
+2025-08-28 12:41:17,274 - INFO - [Orchestrator] All required scripts found
+2025-08-28 12:41:17,274 - INFO - [Orchestrator] Starting OECD Tax Revenue Data Pipeline
+2025-08-28 12:41:17,274 - INFO - [Orchestrator] Base directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:41:17,274 - INFO - [Orchestrator] Download directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel
+2025-08-28 12:41:17,274 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:41:17,275 - INFO - [Orchestrator] STEP 1: DOWNLOADING OECD TAX DATA
+2025-08-28 12:41:17,275 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:41:17,275 - INFO - [Orchestrator] Starting Data Downloader...
+2025-08-28 12:41:17,275 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\main.py
+2025-08-28 12:41:17,275 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:41:55,317 - INFO - [Orchestrator] Data Downloader completed successfully in 38.04 seconds
+2025-08-28 12:41:55,318 - INFO - [Orchestrator] Found 3 Excel files in download directory
+2025-08-28 12:41:55,318 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:41:55,318 - INFO - [Orchestrator] STEP 2: CONVERTING EXCEL FILES TO CSV
+2025-08-28 12:41:55,318 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:41:55,318 - INFO - [Orchestrator] Starting Excel Converter...
+2025-08-28 12:41:55,318 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\universal_excel_converter.py --source C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\oecd_tax_data_excel --output C:\Users\Execo Training\Desktop\OECD_TAXREVENUE --verbose
+2025-08-28 12:41:55,319 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:42:01,249 - INFO - [Orchestrator] Excel Converter completed successfully in 5.93 seconds
+2025-08-28 12:42:01,249 - INFO - [Orchestrator] Found 3 CSV files after conversion
+2025-08-28 12:42:01,250 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:42:01,250 - INFO - [Orchestrator] STEP 3: MAPPING AND PROCESSING DATA
+2025-08-28 12:42:01,250 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:42:01,250 - INFO - [Orchestrator] Starting Data Mapper...
+2025-08-28 12:42:01,250 - INFO - [Orchestrator] Command: C:\Users\Execo Training\AppData\Local\Programs\Python\Python313\python.exe C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\final_corrected_mapper.py
+2025-08-28 12:42:01,250 - INFO - [Orchestrator] Working directory: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE
+2025-08-28 12:42:02,059 - INFO - [Orchestrator] Data Mapper completed successfully in 0.81 seconds
+2025-08-28 12:42:02,059 - INFO - [Orchestrator] Final output file created: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\OECD_TAX_REVENUE.csv
+2025-08-28 12:42:02,059 - INFO - [Orchestrator] Pipeline completed successfully!
+2025-08-28 12:42:02,060 - INFO - [Orchestrator] Execution log saved to: C:\Users\Execo Training\Desktop\OECD_TAXREVENUE\execution_log_20250828_124202.json
+2025-08-28 12:42:02,060 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:42:02,060 - INFO - [Orchestrator] EXECUTION SUMMARY
+2025-08-28 12:42:02,061 - INFO - [Orchestrator] ============================================================
+2025-08-28 12:42:02,061 - INFO - [Orchestrator] Total duration: 44.79 seconds
+2025-08-28 12:42:02,061 - INFO - [Orchestrator] Overall success: True
+2025-08-28 12:42:02,061 - INFO - [Orchestrator]   Download: success (38.04s)
+2025-08-28 12:42:02,061 - INFO - [Orchestrator]   Conversion: success (5.93s)
+2025-08-28 12:42:02,062 - INFO - [Orchestrator]   Mapping: success (0.81s)
+2025-08-28 12:42:02,062 - INFO - [Orchestrator] Final output files:
