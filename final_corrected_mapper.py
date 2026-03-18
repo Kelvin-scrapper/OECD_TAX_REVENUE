@@ -1,5 +1,7 @@
 import pandas as pd
 import re
+import os
+from datetime import datetime
 
 # --- 1. The Hardcoded Blueprint (Unchanged) ---
 # This is the master list defining the exact final structure of our output file.
@@ -226,30 +228,28 @@ def extract_data_from_file(filepath, year_set):
 def auto_discover_source_files():
     """
     Automatically discovers and categorizes source files based on their content.
+    Scans all CSV files in the current directory — no hardcoded filenames or dates.
     Returns a mapping of data types to file paths for universal mapping.
     """
     import os
-    
+
     source_mapping = {
         'RSLACT_TAX5000': None,
         'REVOECD_TAX5000': None,
         'RSLACT_TAX5124': None
     }
-    
-    # Known files to check
+
+    # Scan downloads/ for intermediate CSVs; skip the final output file
+    source_dir = 'downloads'
+    output_files = {'OECD_TAX_REVENUE.csv'}
     candidate_files = [
-        '1.csv',
-        'OECD.CTP.TPSDSD_REV_COMP_OECDDF_RSOECD1.0filtered2025-08-26_14-53-25_main.csv',
-        'OECD.CTP.TPSDSD_REV_COMP_LACDF_RSLACfiltered2025-08-26_14-53-46_main.csv'
+        f for f in os.listdir(source_dir)
+        if f.endswith('.csv') and f not in output_files
     ]
-    
-    # Add any CSV files in directory
-    for file in os.listdir('.'):
-        if file.endswith('.csv') and file not in candidate_files:
-            candidate_files.append(file)
-    
+
     print("Auto-discovering source files...")
-    for filepath in candidate_files:
+    for filename in candidate_files:
+        filepath = os.path.join(source_dir, filename)
         if not os.path.exists(filepath):
             continue
             
@@ -367,7 +367,8 @@ print("\nStep 5: Creating custom CSV output to match desired format...")
 final_df = final_df.replace('..', 'NA')
 
 # Manually create the CSV output with the exact format needed
-output_filename = 'OECD_TAX_REVENUE.csv'
+os.makedirs('output', exist_ok=True)
+output_filename = os.path.join('output', 'OECD_TAX_REVENUE.csv')
 with open(output_filename, 'w', newline='', encoding='utf-8') as f:
     # Write header row 1 (codes)
     f.write(','.join([''] + header_row1_codes) + '\n')

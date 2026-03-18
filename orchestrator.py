@@ -21,13 +21,24 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-# Setup logging
+# ============================================================================
+# DIRECTORY SETUP
+# ============================================================================
+os.makedirs('downloads', exist_ok=True)
+os.makedirs('logs', exist_ok=True)
+os.makedirs('output', exist_ok=True)
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 logging.basicConfig(
-    level=logging.INFO, 
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - [%(name)s] %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('orchestrator.log')
+        logging.FileHandler(f'logs/orchestrator_{timestamp}.log'),
+        logging.FileHandler('orchestrator.log'),   # keep rolling summary log
     ]
 )
 logger = logging.getLogger('Orchestrator')
@@ -44,7 +55,7 @@ class OECDDataOrchestrator:
             skip_mapping: Skip the data mapping step
         """
         self.base_dir = Path(base_dir) if base_dir else Path.cwd()
-        self.download_dir = self.base_dir / "oecd_tax_data_excel"
+        self.download_dir = self.base_dir / "downloads"
         self.skip_download = skip_download
         self.skip_conversion = skip_conversion
         self.skip_mapping = skip_mapping
@@ -184,10 +195,10 @@ class OECDDataOrchestrator:
         logger.info("STEP 2: CONVERTING EXCEL FILES TO CSV")
         logger.info("=" * 60)
         
-        # Arguments for the converter
+        # Intermediate CSVs go into downloads/ alongside the Excel files
         args = [
             '--source', str(self.download_dir),
-            '--output', str(self.base_dir),
+            '--output', str(self.download_dir),
             '--verbose'
         ]
         
@@ -200,8 +211,8 @@ class OECDDataOrchestrator:
         }
         
         if success:
-            # Check for CSV files
-            csv_files = list(self.base_dir.glob('*.csv'))
+            # Check for CSV files in downloads/
+            csv_files = list(self.download_dir.glob('*.csv'))
             logger.info(f"Found {len(csv_files)} CSV files after conversion")
             self.execution_log['steps']['conversion']['csv_files_created'] = len(csv_files)
         else:
@@ -230,7 +241,7 @@ class OECDDataOrchestrator:
         
         if success:
             # Check for the final output file
-            final_output = self.base_dir / 'OECD_TAX_REVENUE.csv'
+            final_output = self.base_dir / 'output' / 'OECD_TAX_REVENUE.csv'
             if final_output.exists():
                 logger.info(f"Final output file created: {final_output}")
                 self.execution_log['final_outputs'].append(str(final_output))
@@ -253,7 +264,7 @@ class OECDDataOrchestrator:
         self.execution_log['success'] = len(self.execution_log['errors']) == 0
         
         # Save execution log
-        log_file = self.base_dir / f"execution_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        log_file = self.base_dir / "logs" / f"execution_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         try:
             with open(log_file, 'w', encoding='utf-8') as f:
                 json.dump(self.execution_log, f, indent=2, ensure_ascii=False)
