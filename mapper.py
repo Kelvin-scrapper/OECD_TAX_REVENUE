@@ -281,117 +281,206 @@ def auto_discover_source_files():
 
 # --- 3. Main Execution Logic ---
 
-all_data_series_pool = {}
-all_years_found = set()
+def map_to_output() -> pd.DataFrame:
+    """
+    Run the full mapping pipeline and return the AfricaAI 2-header-row DataFrame.
+    Row 0 = codes, Row 1 = descriptions, Row 2+ = annual data.
+    Also writes output/OECD_TAX_REVENUE.csv as a side-effect.
+    Called by main.py.
+    """
+    _pool = {}
+    _years = set()
 
-print("Step 1: Auto-discovering and reading all source files...")
-source_files = auto_discover_source_files()
+    print("Step 1: Auto-discovering and reading all source files...")
+    _sources = auto_discover_source_files()
 
-# Verify we found all required sources
-required_sources = ['RSLACT_TAX5000', 'REVOECD_TAX5000', 'RSLACT_TAX5124']
-missing_sources = [src for src in required_sources if source_files[src] is None]
-if missing_sources:
-    print(f"ERROR: Could not find source files for: {missing_sources}")
-    exit()
+    required = ['RSLACT_TAX5000', 'REVOECD_TAX5000', 'RSLACT_TAX5124']
+    missing = [s for s in required if _sources[s] is None]
+    if missing:
+        raise FileNotFoundError(f"Could not find source files for: {missing}")
 
-# Read data from discovered files
-source_data = {}
-for source_type, filepath in source_files.items():
-    if filepath:
-        data, metadata = extract_data_from_file(filepath, all_years_found)
-        source_data[source_type] = data
-        print(f"  Loaded {source_type} from: {filepath}")
+    _source_data = {}
+    for src_type, filepath in _sources.items():
+        if filepath:
+            data, _ = extract_data_from_file(filepath, _years)
+            _source_data[src_type] = data
+            print(f"  Loaded {src_type} from: {filepath}")
 
-print("All source data extracted using universal discovery.")
+    print("\nStep 2: Universal mapping...")
+    for code, desc in BLUEPRINT_HEADERS:
+        country = clean_name(desc)
+        matched = src = None
+        if ".RSLACT.TAX5000." in code:
+            matched = robust_country_match(country, list(_source_data['RSLACT_TAX5000'].keys()))
+            src = 'RSLACT_TAX5000'
+        elif ".REVOECD.TAX5000." in code:
+            matched = robust_country_match(country, list(_source_data['REVOECD_TAX5000'].keys()))
+            src = 'REVOECD_TAX5000'
+        elif ".RSLACT.TAX5124." in code:
+            matched = robust_country_match(country, list(_source_data['RSLACT_TAX5124'].keys()))
+            src = 'RSLACT_TAX5124'
+        if matched and src:
+            _pool[code] = _source_data[src][matched]
 
-print("\nStep 2: Universal mapping using discovered sources with robust country matching...")
-mapping_stats = {'matched': 0, 'unmatched': 0, 'unmatched_countries': []}
+    if not _years:
+        raise RuntimeError("No valid year data found in source files.")
 
-for identifier_code, description in BLUEPRINT_HEADERS:
-    # Get the standardized country name that we need to look for in our data dicts
-    target_country_name = clean_name(description)
-    
-    # --- Universal Rule: Match based on identifier patterns ---
-    matched_country = None
-    source_to_use = None
-    
-    if ".RSLACT.TAX5000." in identifier_code:
-        matched_country = robust_country_match(target_country_name, list(source_data['RSLACT_TAX5000'].keys()))
-        source_to_use = 'RSLACT_TAX5000'
-    elif ".REVOECD.TAX5000." in identifier_code:
-        matched_country = robust_country_match(target_country_name, list(source_data['REVOECD_TAX5000'].keys()))
-        source_to_use = 'REVOECD_TAX5000'
-    elif ".RSLACT.TAX5124." in identifier_code:
-        matched_country = robust_country_match(target_country_name, list(source_data['RSLACT_TAX5124'].keys()))
-        source_to_use = 'RSLACT_TAX5124'
-    
-    if matched_country and source_to_use:
-        all_data_series_pool[identifier_code] = source_data[source_to_use][matched_country]
-        mapping_stats['matched'] += 1
-    else:
-        mapping_stats['unmatched'] += 1
-        mapping_stats['unmatched_countries'].append(f"{target_country_name} ({identifier_code})")
+    min_year, max_year = min(_years), max(_years)
+    master_index = pd.RangeIndex(start=min_year, stop=max_year + 1, name='Year')
+    print(f"Year range: {min_year}–{max_year}")
 
-print(f"Universal source mapping complete: {mapping_stats['matched']} matched, {mapping_stats['unmatched']} unmatched.")
-if mapping_stats['unmatched'] > 0:
-    print(f"Unmatched countries: {mapping_stats['unmatched_countries'][:5]}...")  # Show first 5
+    codes = [t[0] for t in BLUEPRINT_HEADERS]
+    descs = [t[1] for t in BLUEPRINT_HEADERS]
+    final_df = pd.DataFrame(index=master_index)
+    for c in codes:
+        if c in _pool:
+            s = _pool[c].copy()
+            s.index = pd.to_numeric(s.index, errors='coerce')
+            final_df[c] = s.reindex(master_index)
+        else:
+            final_df[c] = pd.NA
+    final_df = final_df.replace('..', pd.NA)
 
-
-if not all_years_found:
-    print("\nFATAL ERROR: No valid year data was found. Please check source files.")
-    exit()
-
-print("\nStep 3: Dynamically determining the full range of years...")
-min_year, max_year = min(all_years_found), max(all_years_found)
-master_index = pd.RangeIndex(start=min_year, stop=max_year + 1, name='Year')
-print(f"Year range determined: {min_year} to {max_year}.")
-
-print("\nStep 4: Building the final table from the mapped data...")
-header_row1_codes = [t[0] for t in BLUEPRINT_HEADERS]
-header_row2_descs = [t[1] for t in BLUEPRINT_HEADERS]
-
-final_df = pd.DataFrame(index=master_index)
-
-for code in header_row1_codes:
-    if code in all_data_series_pool:
-        series = all_data_series_pool[code]
-        series.index = pd.to_numeric(series.index, errors='coerce')
-        final_df[code] = series.reindex(master_index)
-    else:
-        final_df[code] = pd.NA
-print("Data has been assembled into the blueprint structure.")
-
-print("\nStep 5: Creating custom CSV output to match desired format...")
-
-# Replace '..' with 'NA' to match desired output format
-final_df = final_df.replace('..', 'NA')
-
-# Manually create the CSV output with the exact format needed
-os.makedirs('output', exist_ok=True)
-output_filename = os.path.join('output', 'OECD_TAX_REVENUE.csv')
-with open(output_filename, 'w', newline='', encoding='utf-8') as f:
-    # Write header row 1 (codes)
-    f.write(','.join([''] + header_row1_codes) + '\n')
-    
-    # Write header row 2 (descriptions) - remove extra quotes
-    clean_descriptions = [desc.strip('"') for desc in header_row2_descs]
-    f.write(','.join([''] + [f'"{desc}"' for desc in clean_descriptions]) + '\n')
-    
-    # Write data rows
+    # Build AfricaAI 2-header-row DataFrame
+    clean_descs = [d.strip('"') for d in descs]
+    header_codes = [None] + codes
+    header_descs = [None] + clean_descs
+    data_rows = []
     for year in final_df.index:
-        row_data = [str(year)]
-        for code in header_row1_codes:
-            if code in final_df.columns:
-                value = final_df.loc[year, code]
-                if pd.isna(value):
-                    row_data.append('')
-                else:
-                    row_data.append(str(value))
-            else:
-                row_data.append('')
-        f.write(','.join(row_data) + '\n')
+        row = [str(year)]
+        for c in codes:
+            val = final_df.loc[year, c]
+            row.append(None if pd.isna(val) else float(val))
+        data_rows.append(row)
 
-print("Custom CSV output created to match desired format.")
+    out_df = pd.DataFrame([header_codes, header_descs] + data_rows)
 
-print(f"\nProcessing finished successfully.")
-print(f"The final, self-contained data file has been saved to: {output_filename}")
+    # Also write the legacy CSV output
+    os.makedirs('output', exist_ok=True)
+    csv_path = os.path.join('output', 'OECD_TAX_REVENUE.csv')
+    with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+        f.write(','.join([''] + codes) + '\n')
+        f.write(','.join([''] + [f'"{d}"' for d in clean_descs]) + '\n')
+        for row in data_rows:
+            f.write(','.join(['' if v is None else str(v) for v in row]) + '\n')
+    print(f"CSV written: {csv_path}")
+
+    return out_df
+
+
+def build_metadata_rows() -> list:
+    """Return metadata dicts for the META xlsx file."""
+    meta = []
+    for code, desc in BLUEPRINT_HEADERS:
+        meta.append({
+            "CODE":              code,
+            "DESCRIPTION":       desc.strip('"'),
+            "FREQUENCY":         "Annual",
+            "UNIT":              "% of GDP",
+            "SOURCE_NAME":       "OECD Revenue Statistics",
+            "SOURCE_URL":        "https://data-explorer.oecd.org",
+            "DATASET":           "OECD_TAXREVENUE",
+            "NEXT_RELEASE_DATE": "",
+        })
+    return meta
+
+
+if __name__ == "__main__":
+ all_data_series_pool = {}
+ all_years_found = set()
+
+ print("Step 1: Auto-discovering and reading all source files...")
+ source_files = auto_discover_source_files()
+
+ # Verify we found all required sources
+ required_sources = ['RSLACT_TAX5000', 'REVOECD_TAX5000', 'RSLACT_TAX5124']
+ missing_sources = [src for src in required_sources if source_files[src] is None]
+ if missing_sources:
+     print(f"ERROR: Could not find source files for: {missing_sources}")
+     exit()
+
+ # Read data from discovered files
+ source_data = {}
+ for source_type, filepath in source_files.items():
+     if filepath:
+         data, metadata = extract_data_from_file(filepath, all_years_found)
+         source_data[source_type] = data
+         print(f"  Loaded {source_type} from: {filepath}")
+
+ print("All source data extracted using universal discovery.")
+
+ print("\nStep 2: Universal mapping using discovered sources with robust country matching...")
+ mapping_stats = {'matched': 0, 'unmatched': 0, 'unmatched_countries': []}
+
+ for identifier_code, description in BLUEPRINT_HEADERS:
+     target_country_name = clean_name(description)
+     matched_country = None
+     source_to_use = None
+
+     if ".RSLACT.TAX5000." in identifier_code:
+         matched_country = robust_country_match(target_country_name, list(source_data['RSLACT_TAX5000'].keys()))
+         source_to_use = 'RSLACT_TAX5000'
+     elif ".REVOECD.TAX5000." in identifier_code:
+         matched_country = robust_country_match(target_country_name, list(source_data['REVOECD_TAX5000'].keys()))
+         source_to_use = 'REVOECD_TAX5000'
+     elif ".RSLACT.TAX5124." in identifier_code:
+         matched_country = robust_country_match(target_country_name, list(source_data['RSLACT_TAX5124'].keys()))
+         source_to_use = 'RSLACT_TAX5124'
+
+     if matched_country and source_to_use:
+         all_data_series_pool[identifier_code] = source_data[source_to_use][matched_country]
+         mapping_stats['matched'] += 1
+     else:
+         mapping_stats['unmatched'] += 1
+         mapping_stats['unmatched_countries'].append(f"{target_country_name} ({identifier_code})")
+
+ print(f"Universal source mapping complete: {mapping_stats['matched']} matched, {mapping_stats['unmatched']} unmatched.")
+ if mapping_stats['unmatched'] > 0:
+     print(f"Unmatched countries: {mapping_stats['unmatched_countries'][:5]}...")
+
+ if not all_years_found:
+     print("\nFATAL ERROR: No valid year data was found. Please check source files.")
+     exit()
+
+ print("\nStep 3: Dynamically determining the full range of years...")
+ min_year, max_year = min(all_years_found), max(all_years_found)
+ master_index = pd.RangeIndex(start=min_year, stop=max_year + 1, name='Year')
+ print(f"Year range determined: {min_year} to {max_year}.")
+
+ print("\nStep 4: Building the final table from the mapped data...")
+ header_row1_codes = [t[0] for t in BLUEPRINT_HEADERS]
+ header_row2_descs = [t[1] for t in BLUEPRINT_HEADERS]
+
+ final_df = pd.DataFrame(index=master_index)
+
+ for code in header_row1_codes:
+     if code in all_data_series_pool:
+         series = all_data_series_pool[code]
+         series.index = pd.to_numeric(series.index, errors='coerce')
+         final_df[code] = series.reindex(master_index)
+     else:
+         final_df[code] = pd.NA
+ print("Data has been assembled into the blueprint structure.")
+
+ print("\nStep 5: Creating custom CSV output to match desired format...")
+ final_df = final_df.replace('..', 'NA')
+
+ os.makedirs('output', exist_ok=True)
+ output_filename = os.path.join('output', 'OECD_TAX_REVENUE.csv')
+ with open(output_filename, 'w', newline='', encoding='utf-8') as f:
+     f.write(','.join([''] + header_row1_codes) + '\n')
+     clean_descriptions = [desc.strip('"') for desc in header_row2_descs]
+     f.write(','.join([''] + [f'"{desc}"' for desc in clean_descriptions]) + '\n')
+     for year in final_df.index:
+         row_data = [str(year)]
+         for code in header_row1_codes:
+             if code in final_df.columns:
+                 value = final_df.loc[year, code]
+                 row_data.append('' if pd.isna(value) else str(value))
+             else:
+                 row_data.append('')
+         f.write(','.join(row_data) + '\n')
+
+ print("Custom CSV output created to match desired format.")
+ print(f"\nProcessing finished successfully.")
+ print(f"The final, self-contained data file has been saved to: {output_filename}")
