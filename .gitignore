@@ -1,0 +1,34 @@
+# Code only: never commit downloaded sources, generated outputs or local artefacts.
+
+# downloaded files, debug pages, generated DATA / META / ZIP, run logs
+downloads/
+output/
+logs/
+*.log
+
+# data / document files anywhere in the project
+*.pdf
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+*.zip
+*.ZIP
+*.docx
+~$*
+
+# debug captures and browser profiles
+*.html
+*.png
+debug_*
+_chrome_profile/
+chrome_profile/
+
+# Python / editor artefacts
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.vscode/
+.idea/

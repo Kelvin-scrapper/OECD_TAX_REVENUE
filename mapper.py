@@ -1,7 +1,32 @@
+import io
+import zipfile
 import pandas as pd
 import re
 import os
 from datetime import datetime
+
+
+def _read_xlsx_patched(path) -> pd.DataFrame:
+    """
+    Read an xlsx file whose styles.xml contains bare <fill/> elements that
+    openpyxl cannot parse.  Patches the styles in-memory before handing the
+    buffer to pandas so the rest of the logic is unchanged.
+    Returns the full sheet as a DataFrame with header=None.
+    """
+    buf = io.BytesIO()
+    with zipfile.ZipFile(path, 'r') as zin:
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                data = zin.read(item.filename)
+                if item.filename == 'xl/styles.xml':
+                    # Replace empty <fill/> with a valid fill element
+                    data = data.replace(
+                        b'<fill/>',
+                        b'<fill><patternFill patternType="none"/></fill>'
+                    )
+                zout.writestr(item, data)
+    buf.seek(0)
+    return pd.read_excel(buf, sheet_name=0, header=None)
 
 # --- 1. The Hardcoded Blueprint (Unchanged) ---
 # This is the master list defining the exact final structure of our output file.
@@ -178,34 +203,75 @@ def robust_country_match(target_country, available_countries):
 
 def extract_data_from_file(filepath, year_set):
     """
-    Reads a single source file and returns a clean dictionary mapping cleaned 
-    country names to their data series. It also updates the global set of all years found.
-    Also returns metadata about the file content for universal mapping.
+    Reads a CSV or xlsx source file and returns a clean dictionary mapping
+    cleaned country names to their data series.  Updates year_set in-place.
+    xlsx files with broken styles.xml are patched transparently.
     """
     country_data = {}
     file_metadata = {'tax_category': None, 'countries_found': []}
-    
+
     try:
-        df = pd.read_csv(filepath, skiprows=5, skipfooter=2, engine='python', header=0)
-        
-        # Read the header to determine tax category
-        with open(filepath, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            if len(lines) >= 3:
-                tax_category_line = lines[2].strip()
-                if 'Taxes on goods and services' in tax_category_line:
-                    file_metadata['tax_category'] = 'TAX5000'
-                elif 'Taxes on exports' in tax_category_line:
-                    file_metadata['tax_category'] = 'TAX5124'
-        
-        df.rename(columns={df.columns[0]: 'Country'}, inplace=True)
-        # Drop the second column which is always empty/junk
-        if len(df.columns) > 1 and 'Unnamed: 1' in df.columns:
-             df.drop(columns=df.columns[1], inplace=True)
-        df.set_index('Country', inplace=True)
-        
-        df_transposed = df.transpose().dropna(how='all')
-        
+        is_xlsx = filepath.lower().endswith('.xlsx')
+
+        if is_xlsx:
+            df_raw = _read_xlsx_patched(filepath)
+            # OECD xlsx layout:
+            #   Col 0: always empty; Col 1: labels / country names; Cols 3+: year values
+            #   Row 0-4: metadata; Row 5: year header; Row 6: "Reference area"; Rows 7+: data
+            l2 = str(df_raw.iloc[2, 1]) if len(df_raw) > 2 else ''
+            if 'Taxes on goods and services' in l2:
+                file_metadata['tax_category'] = 'TAX5000'
+            elif 'Taxes on exports' in l2:
+                file_metadata['tax_category'] = 'TAX5124'
+
+            # Build col_index → year string from row 5 (years start at col 3)
+            year_header_row = df_raw.iloc[5]
+            year_map = {}
+            for ci in range(3, len(year_header_row)):
+                v = year_header_row.iloc[ci]
+                if pd.notna(v):
+                    try:
+                        year_map[ci] = str(int(float(v)))
+                    except (ValueError, TypeError):
+                        pass
+
+            # Data rows: row 7 to len-3 (skip row 6 sub-header; skip last 2 footer rows)
+            for ri in range(7, len(df_raw) - 2):
+                row = df_raw.iloc[ri]
+                country_raw = str(row.iloc[1]).strip()
+                if not country_raw or country_raw in ('nan', 'NaN', 'None', ''):
+                    continue
+                series_dict = {yr: (None if pd.isna(row.iloc[ci]) else float(row.iloc[ci]))
+                               for ci, yr in year_map.items() if ci < len(row)}
+                s = pd.Series(series_dict)
+                cleaned = clean_name(country_raw)
+                country_data[cleaned] = s
+                file_metadata['countries_found'].append(cleaned)
+
+            year_set.update(int(y) for y in year_map.values())
+
+            print(f"  Successfully extracted data for {len(country_data)} entities from: {filepath}")
+            print(f"  File contains tax category: {file_metadata['tax_category']}")
+            return country_data, file_metadata
+
+        else:
+            df_data = pd.read_csv(filepath, skiprows=5, skipfooter=2, engine='python', header=0)
+            with open(filepath, 'r', encoding='utf-8') as fh:
+                lines = fh.readlines()
+            l2 = lines[2].strip() if len(lines) > 2 else ''
+            if 'Taxes on goods and services' in l2:
+                file_metadata['tax_category'] = 'TAX5000'
+            elif 'Taxes on exports' in l2:
+                file_metadata['tax_category'] = 'TAX5124'
+
+        df_data.rename(columns={df_data.columns[0]: 'Country'}, inplace=True)
+        # Drop the second column (always empty / duplicate "Time period" / "Unnamed: 1")
+        if len(df_data.columns) > 1:
+            df_data.drop(columns=df_data.columns[1], inplace=True)
+        df_data.set_index('Country', inplace=True)
+
+        df_transposed = df_data.transpose().dropna(how='all')
+
         valid_years = pd.to_numeric(df_transposed.index, errors='coerce').dropna().astype(int)
         year_set.update(valid_years)
 
@@ -225,58 +291,94 @@ def extract_data_from_file(filepath, year_set):
         print(f"An error occurred while processing {filepath}: {e}")
         return {}, file_metadata
 
+def _classify_file(line0: str, line1: str, line2: str) -> str | None:
+    """Return source type key from the first 3 metadata lines, or None."""
+    is_lac = 'Latin America' in line0 or 'Latin America' in line1
+    is_oecd = not is_lac and ('OECD' in line1 or 'OECD' in line0)
+    if 'Taxes on goods and services' in line2:
+        if is_lac:
+            return 'RSLACT_TAX5000'
+        if is_oecd:
+            return 'REVOECD_TAX5000'
+    elif 'Taxes on exports' in line2:
+        if is_lac:
+            return 'RSLACT_TAX5124'
+    return None
+
+
 def auto_discover_source_files():
     """
-    Automatically discovers and categorizes source files based on their content.
-    Scans all CSV files in the current directory — no hardcoded filenames or dates.
-    Returns a mapping of data types to file paths for universal mapping.
+    Scan downloads/ for CSV and xlsx source files.
+    Prioritizes the latest file for each category based on the timestamp in the
+    filename. Falls back to file modification time if no timestamp is found.
     """
-    import os
-
     source_mapping = {
         'RSLACT_TAX5000': None,
         'REVOECD_TAX5000': None,
         'RSLACT_TAX5124': None
     }
 
-    # Scan downloads/ for intermediate CSVs; skip the final output file
     source_dir = 'downloads'
-    output_files = {'OECD_TAX_REVENUE.csv'}
-    candidate_files = [
-        f for f in os.listdir(source_dir)
-        if f.endswith('.csv') and f not in output_files
-    ]
+    skip = {'OECD_TAX_REVENUE.csv'}
 
-    print("Auto-discovering source files...")
-    for filename in candidate_files:
-        filepath = os.path.join(source_dir, filename)
-        if not os.path.exists(filepath):
+    all_candidates = []
+
+    # Gather all potential files
+    for filename in os.listdir(source_dir):
+        if filename in skip:
             continue
-            
+        if not (filename.endswith('.csv') or filename.endswith('.xlsx')):
+            continue
+        
+        filepath = os.path.join(source_dir, filename)
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                if len(lines) >= 4:
-                    tax_category_line = lines[2].strip()
-                    institutional_sector = lines[1].strip() if len(lines) > 1 else ''
-                    
-                    # Determine the data type based on content
-                    if 'Taxes on goods and services' in tax_category_line:
-                        if 'Latin American' in institutional_sector or 'Revenue Statistics in Latin America' in lines[0]:
-                            source_mapping['RSLACT_TAX5000'] = filepath
-                            print(f"  Found RSLACT TAX5000 source: {filepath}")
-                        elif 'OECD' in institutional_sector or any('OECD' in line for line in lines[:5]):
-                            source_mapping['REVOECD_TAX5000'] = filepath
-                            print(f"  Found REVOECD TAX5000 source: {filepath}")
-                    elif 'Taxes on exports' in tax_category_line:
-                        if 'Latin American' in institutional_sector or 'Revenue Statistics in Latin America' in lines[0]:
-                            source_mapping['RSLACT_TAX5124'] = filepath
-                            print(f"  Found RSLACT TAX5124 source: {filepath}")
-                            
+            src_type = None
+            if filename.endswith('.csv'):
+                with open(filepath, 'r', encoding='utf-8') as fh:
+                    lines = [fh.readline() for _ in range(3)]
+                if len(lines) >= 3:
+                    src_type = _classify_file(lines[0], lines[1], lines[2])
+            else:
+                df_head = _read_xlsx_patched(filepath)
+                col = 1 if df_head.shape[1] > 1 else 0
+                l0 = str(df_head.iloc[0, col]) if len(df_head) > 0 else ''
+                l1 = str(df_head.iloc[1, col]) if len(df_head) > 1 else ''
+                l2 = str(df_head.iloc[2, col]) if len(df_head) > 2 else ''
+                src_type = _classify_file(l0, l1, l2)
+            
+            if src_type:
+                # Extract timestamp from filename if possible (YYYY-MM-DD HH-MM-SS or similar)
+                # Examples:
+                # ...2026-06-16 11-41-26.xlsx
+                # ...2026-06-16_09-45-03_main.csv
+                ts_match = re.search(r'(\d{4}-\d{2}-\d{2}[ _]\d{2}[-_]\d{2}[-_]\d{2})', filename)
+                ts_val = ts_match.group(1).replace('_', ' ').replace('-', ':') if ts_match else ""
+                
+                # If no timestamp in name, use file mtime
+                mtime = os.path.getmtime(filepath)
+                
+                all_candidates.append({
+                    'type': src_type,
+                    'path': filepath,
+                    'timestamp': ts_val,
+                    'mtime': mtime,
+                    'is_csv': filename.endswith('.csv')
+                })
         except Exception as e:
             print(f"  Could not analyze {filepath}: {e}")
+
+    # For each type, pick the best candidate (latest timestamp, then latest mtime, prefer CSV if same time)
+    for src_type in source_mapping.keys():
+        type_candidates = [c for c in all_candidates if c['type'] == src_type]
+        if not type_candidates:
             continue
-    
+        
+        # Sort by timestamp string desc, then mtime desc, then is_csv desc
+        type_candidates.sort(key=lambda x: (x['timestamp'], x['mtime'], x['is_csv']), reverse=True)
+        best = type_candidates[0]
+        source_mapping[src_type] = best['path']
+        print(f"  Selected {src_type}: {best['path']} (TS: {best['timestamp'] or 'N/A'})")
+
     return source_mapping
 
 # --- 3. Main Execution Logic ---
@@ -294,10 +396,12 @@ def map_to_output() -> pd.DataFrame:
     print("Step 1: Auto-discovering and reading all source files...")
     _sources = auto_discover_source_files()
 
-    required = ['RSLACT_TAX5000', 'REVOECD_TAX5000', 'RSLACT_TAX5124']
+    required = ['RSLACT_TAX5000', 'REVOECD_TAX5000']
     missing = [s for s in required if _sources[s] is None]
     if missing:
         raise FileNotFoundError(f"Could not find source files for: {missing}")
+    if _sources.get('RSLACT_TAX5124') is None:
+        print("  Warning: RSLACT_TAX5124 (Taxes on exports) not available — columns will be empty")
 
     _source_data = {}
     for src_type, filepath in _sources.items():
@@ -316,7 +420,7 @@ def map_to_output() -> pd.DataFrame:
         elif ".REVOECD.TAX5000." in code:
             matched = robust_country_match(country, list(_source_data['REVOECD_TAX5000'].keys()))
             src = 'REVOECD_TAX5000'
-        elif ".RSLACT.TAX5124." in code:
+        elif ".RSLACT.TAX5124." in code and 'RSLACT_TAX5124' in _source_data:
             matched = robust_country_match(country, list(_source_data['RSLACT_TAX5124'].keys()))
             src = 'RSLACT_TAX5124'
         if matched and src:
@@ -386,101 +490,13 @@ def build_metadata_rows() -> list:
 
 
 if __name__ == "__main__":
- all_data_series_pool = {}
- all_years_found = set()
-
- print("Step 1: Auto-discovering and reading all source files...")
- source_files = auto_discover_source_files()
-
- # Verify we found all required sources
- required_sources = ['RSLACT_TAX5000', 'REVOECD_TAX5000', 'RSLACT_TAX5124']
- missing_sources = [src for src in required_sources if source_files[src] is None]
- if missing_sources:
-     print(f"ERROR: Could not find source files for: {missing_sources}")
-     exit()
-
- # Read data from discovered files
- source_data = {}
- for source_type, filepath in source_files.items():
-     if filepath:
-         data, metadata = extract_data_from_file(filepath, all_years_found)
-         source_data[source_type] = data
-         print(f"  Loaded {source_type} from: {filepath}")
-
- print("All source data extracted using universal discovery.")
-
- print("\nStep 2: Universal mapping using discovered sources with robust country matching...")
- mapping_stats = {'matched': 0, 'unmatched': 0, 'unmatched_countries': []}
-
- for identifier_code, description in BLUEPRINT_HEADERS:
-     target_country_name = clean_name(description)
-     matched_country = None
-     source_to_use = None
-
-     if ".RSLACT.TAX5000." in identifier_code:
-         matched_country = robust_country_match(target_country_name, list(source_data['RSLACT_TAX5000'].keys()))
-         source_to_use = 'RSLACT_TAX5000'
-     elif ".REVOECD.TAX5000." in identifier_code:
-         matched_country = robust_country_match(target_country_name, list(source_data['REVOECD_TAX5000'].keys()))
-         source_to_use = 'REVOECD_TAX5000'
-     elif ".RSLACT.TAX5124." in identifier_code:
-         matched_country = robust_country_match(target_country_name, list(source_data['RSLACT_TAX5124'].keys()))
-         source_to_use = 'RSLACT_TAX5124'
-
-     if matched_country and source_to_use:
-         all_data_series_pool[identifier_code] = source_data[source_to_use][matched_country]
-         mapping_stats['matched'] += 1
-     else:
-         mapping_stats['unmatched'] += 1
-         mapping_stats['unmatched_countries'].append(f"{target_country_name} ({identifier_code})")
-
- print(f"Universal source mapping complete: {mapping_stats['matched']} matched, {mapping_stats['unmatched']} unmatched.")
- if mapping_stats['unmatched'] > 0:
-     print(f"Unmatched countries: {mapping_stats['unmatched_countries'][:5]}...")
-
- if not all_years_found:
-     print("\nFATAL ERROR: No valid year data was found. Please check source files.")
-     exit()
-
- print("\nStep 3: Dynamically determining the full range of years...")
- min_year, max_year = min(all_years_found), max(all_years_found)
- master_index = pd.RangeIndex(start=min_year, stop=max_year + 1, name='Year')
- print(f"Year range determined: {min_year} to {max_year}.")
-
- print("\nStep 4: Building the final table from the mapped data...")
- header_row1_codes = [t[0] for t in BLUEPRINT_HEADERS]
- header_row2_descs = [t[1] for t in BLUEPRINT_HEADERS]
-
- final_df = pd.DataFrame(index=master_index)
-
- for code in header_row1_codes:
-     if code in all_data_series_pool:
-         series = all_data_series_pool[code]
-         series.index = pd.to_numeric(series.index, errors='coerce')
-         final_df[code] = series.reindex(master_index)
-     else:
-         final_df[code] = pd.NA
- print("Data has been assembled into the blueprint structure.")
-
- print("\nStep 5: Creating custom CSV output to match desired format...")
- final_df = final_df.replace('..', 'NA')
-
- os.makedirs('output', exist_ok=True)
- output_filename = os.path.join('output', 'OECD_TAX_REVENUE.csv')
- with open(output_filename, 'w', newline='', encoding='utf-8') as f:
-     f.write(','.join([''] + header_row1_codes) + '\n')
-     clean_descriptions = [desc.strip('"') for desc in header_row2_descs]
-     f.write(','.join([''] + [f'"{desc}"' for desc in clean_descriptions]) + '\n')
-     for year in final_df.index:
-         row_data = [str(year)]
-         for code in header_row1_codes:
-             if code in final_df.columns:
-                 value = final_df.loc[year, code]
-                 row_data.append('' if pd.isna(value) else str(value))
-             else:
-                 row_data.append('')
-         f.write(','.join(row_data) + '\n')
-
- print("Custom CSV output created to match desired format.")
- print(f"\nProcessing finished successfully.")
- print(f"The final, self-contained data file has been saved to: {output_filename}")
+    try:
+        map_to_output()
+        print("\nMapping finished successfully.")
+    except PermissionError:
+        print("\nERROR: Could not write output file (Permission Denied). "
+              "Please ensure output/OECD_TAX_REVENUE.csv is not open in Excel or another program.")
+    except Exception as e:
+        print(f"\nERROR: Mapping failed: {e}")
+        import traceback
+        traceback.print_exc()

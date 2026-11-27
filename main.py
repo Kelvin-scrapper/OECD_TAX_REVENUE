@@ -79,7 +79,7 @@ def scrape() -> None:
     print("[main] Step 1: Fetching raw data from OECD...")
     scraper.fetch_data(downloads_dir=DOWNLOADS_DIR)
 
-    print("[main] Step 2: Converting Excel files to CSV...")
+    print("[main] Step 2: Converting Excel files to CSV (best-effort)...")
     converter = os.path.join(os.path.dirname(__file__), "universal_excel_converter.py")
     result = subprocess.run(
         [sys.executable, converter,
@@ -88,10 +88,10 @@ def scrape() -> None:
          "--verbose"],
         capture_output=True, text=True
     )
-    if result.returncode != 0:
-        print(f"[main] Converter stderr:\n{result.stderr}")
-        raise RuntimeError("universal_excel_converter.py failed")
     print(result.stdout)
+    if result.returncode != 0:
+        print(f"[main] Converter warning (non-fatal): {result.stderr[:300]}")
+        print("[main] Mapper will fall back to reading xlsx files directly.")
 
     print("[main] Step 3: Mapping to output format...")
     out_df = mapper.map_to_output()
